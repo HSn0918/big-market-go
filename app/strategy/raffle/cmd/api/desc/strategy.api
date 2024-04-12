@@ -1,0 +1,52 @@
+syntax = "v1"
+
+info (
+	desc:    "strategy.api"
+	author:  "HSn"
+	email:   "hsn.zj@foxmail.com"
+	date:    "2024-04-13"
+	version: "v1"
+)
+
+type (
+	StrategyArmoryRequest {
+		StrategyId int64 `json:"strategy_id"`
+	}
+	RaffleAwardListRequest {
+		StrategyId int64 `json:"strategy_id"`
+	}
+	RaffleRequest {
+		strategyId int64 `json:"strategy_id"`
+	}
+)
+
+type (
+	StrategyArmoryResponse {
+		IsSuccess bool `json:"is_success"`
+	}
+	RaffleAwardListResponse {
+		AwardId       int    `json:"award_id"`
+		AwardTitle    string `json:"award_title"`
+		AwardSubtitle int    `json:"award_subtitle"`
+		Sort          int    `json:"sort"`
+	}
+	RaffleResponse {
+		AwardId    int `json:"award_id"`
+		AwardIndex int `json:"award_index"`
+	}
+)
+
+@server (
+	prefix: /api/v1/raffle
+)
+service strategy-api {
+	@handler StrategyArmoryHandler
+	get /strategy_armory (StrategyArmoryRequest) returns (StrategyArmoryResponse)
+
+	@handler RaffleAwardListHandler
+	post /query_raffle_award_list (RaffleAwardListRequest) returns (RaffleAwardListResponse)
+
+	@handler RaffleHandler
+	post /random_raffle (RaffleRequest) returns (RaffleResponse)
+}
+
