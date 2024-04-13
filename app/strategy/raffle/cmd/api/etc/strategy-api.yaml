@@ -1,3 +1,12 @@
 Name: strategy-api
 Host: 0.0.0.0
 Port: 8888
+BizRedis:
+  Host: 127.0.0.1:6379
+  Pass:
+  Type: node
+DataSource: root:Huangji1@tcp(127.0.0.1:3306)/big_market?parseTime=true&loc=Local
+CacheRedis:
+  - Host: 127.0.0.1:6379
+    Pass:
+    Type: node

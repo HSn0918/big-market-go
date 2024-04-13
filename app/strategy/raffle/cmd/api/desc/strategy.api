@@ -1,51 +1,60 @@
 syntax = "v1"
 
 info (
-	desc:    "strategy.api"
-	author:  "HSn"
-	email:   "hsn.zj@foxmail.com"
-	date:    "2024-04-13"
-	version: "v1"
+	desc:    "strategy.api" // API的描述
+	author:  "HSn" // 作者信息
+	email:   "hsn.zj@foxmail.com" // 作者邮箱
+	date:    "2024-04-13" // 文件创建日期
+	version: "v1" // API版本
 )
 
 type (
+	// StrategyArmoryRequest定义了请求策略库存的请求格式
 	StrategyArmoryRequest {
-		StrategyId int64 `json:"strategy_id"`
+		StrategyId int64 `json:"strategy_id"` // 策略ID，用于查询对应的策略库存
 	}
+	// RaffleAwardListRequest定义了请求抽奖奖品列表的请求格式
 	RaffleAwardListRequest {
-		StrategyId int64 `json:"strategy_id"`
+		StrategyId int64 `json:"strategy_id"` // 策略ID，用于查询对应的抽奖奖品列表
 	}
+	// RaffleRequest定义了进行抽奖的请求格式
 	RaffleRequest {
-		strategyId int64 `json:"strategy_id"`
+		strategyId int64 `json:"strategy_id"` // 策略ID，用于执行抽奖操作
 	}
 )
 
 type (
+	// StrategyArmoryResponse定义了请求策略库存的响应格式
 	StrategyArmoryResponse {
-		IsSuccess bool `json:"is_success"`
+		IsSuccess bool `json:"is_success"` // 表明请求是否成功
 	}
+	// RaffleAwardListResponse定义了抽奖奖品列表的响应格式
 	RaffleAwardListResponse {
-		AwardId       int    `json:"award_id"`
-		AwardTitle    string `json:"award_title"`
-		AwardSubtitle int    `json:"award_subtitle"`
-		Sort          int    `json:"sort"`
+		AwardId       int    `json:"award_id"` // 奖品ID
+		AwardTitle    string `json:"award_title"` // 奖品标题
+		AwardSubtitle int    `json:"award_subtitle"` // 奖品副标题
+		Sort          int    `json:"sort"` // 奖品排序索引
 	}
+	// RaffleResponse定义了抽奖操作的响应格式
 	RaffleResponse {
-		AwardId    int `json:"award_id"`
-		AwardIndex int `json:"award_index"`
+		AwardId    int `json:"award_id"` // 获得的奖品ID
+		AwardIndex int `json:"award_index"` // 奖品在列表中的索引
 	}
 )
 
 @server (
-	prefix: /api/v1/raffle
+	prefix: /api/v1/raffle // API的基本路由前缀
 )
 service strategy-api {
+	// 处理获取策略库存的请求
 	@handler StrategyArmoryHandler
 	get /strategy_armory (StrategyArmoryRequest) returns (StrategyArmoryResponse)
 
+	// 处理查询抽奖奖品列表的请求
 	@handler RaffleAwardListHandler
 	post /query_raffle_award_list (RaffleAwardListRequest) returns (RaffleAwardListResponse)
 
+	// 处理执行抽奖操作的请求
 	@handler RaffleHandler
 	post /random_raffle (RaffleRequest) returns (RaffleResponse)
 }
