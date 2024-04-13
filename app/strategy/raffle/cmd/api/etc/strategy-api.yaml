@@ -1,6 +1,7 @@
 Name: strategy-api
 Host: 0.0.0.0
 Port: 8888
+Timeout: 99999999999
 BizRedis:
   Host: 127.0.0.1:6379
   Pass:
@@ -10,3 +11,10 @@ CacheRedis:
   - Host: 127.0.0.1:6379
     Pass:
     Type: node
+Log:
+    ServiceName: raffle-api
+    Mode: file
+    Level: info
+    Encoding: plain
+    Path: logs
+

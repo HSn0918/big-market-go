@@ -2,23 +2,12 @@ package logic
 
 import (
 	"context"
-	"fmt"
-	"math/rand"
-	"strconv"
+	"errors"
 
-	"github.com/hsn0918/BigMarket/pkg/util"
-
-	"github.com/ahmetb/go-linq/v3"
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/model"
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/svc"
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/types"
 	"github.com/zeromicro/go-zero/core/logx"
-)
-
-const (
-	cacheStrategyAwardCountKey = "strategy#award#%d#count#%d"
-	cacheStrategyRateRangeKey  = "big#market#strategy#rate#range#key#%d#%d"
-	cacheStrategyRateRange     = "big#market#strategy#rate#range#%d"
 )
 
 type StrategyArmoryLogic struct {
@@ -42,66 +31,47 @@ func (l *StrategyArmoryLogic) StrategyArmory(req *types.StrategyArmoryRequest) (
 	// 2 缓存奖品库存【用于decr扣减库存使用】
 	for _, v := range StrategyAwardList {
 		err = l.cacheStrategyAwardCount(req.StrategyId, int(v.AwardId), int(v.AwardCount))
+		if err != nil {
+			logx.Error("cacheStrategyAwardCount error:", err)
+		}
 	}
 	// 3.1 默认装配配置【全量抽奖概率】
 	l.assembleLotteryStrategy(req.StrategyId, StrategyAwardList)
-	// 3.2 权重策略配置 - 适用于 rule_weight 权重规则配置【4000:102,103,104,105 5000:102,103,104,105,106,107 6000:102,103,104,105,106,107,108,109】
-	// todo:3.2
-	// 业务异常，策略规则中 rule_weight 权重规则已适用但未配置
 	resp = &types.StrategyArmoryResponse{IsSuccess: true}
-	return
-}
-func (l *StrategyArmoryLogic) assembleLotteryStrategy(id int64, list []*model.StrategyAward) (IsSuccess bool, err error) {
-	// 1. 获得最小概率值
-	var minAward float64
-	minAward = linq.From(list).
-		SelectT(func(a *model.StrategyAward) float64 { return a.AwardRate }).
-		Min().(float64)
+	// 3.2 装配权重策略配置
+	strategy, err := l.svcCtx.StrategyModel.QueryStrategy(l.ctx, req.StrategyId)
+	if err != nil {
+		// 3.2.1 "rule_weight"规则不存在，则直接返回
+		if errors.Is(err, model.ErrNotFound) {
+			return resp, nil
+		}
+		resp = &types.StrategyArmoryResponse{IsSuccess: false}
+		logx.Error("QueryStrategy error:", err)
+		return resp, err
+	}
+	// 3.2.2 "rule_weight"规则存在，则需要进行权重策略配置
 
-	// 2. 循环计算找到概率范围值
-	rateRange := util.Convert(minAward)
-	// 3. 生成策略奖品概率查找表「这里指需要在list集合中，存放上对应的奖品占位即可，占位越多等于概率越高」
-	strategyAwardSearchRateTables := make([]int64, int(rateRange))
-	currentIndex := 0
-	for _, v := range list {
-		awardRate := int(v.AwardRate * rateRange) // 将概率转化为表中的索引范围
-		for i := 0; i < awardRate && currentIndex < int(rateRange); i++ {
-			strategyAwardSearchRateTables[currentIndex] = v.AwardId
-			currentIndex++
+	strategyRule, err := l.svcCtx.StrategyRuleModel.QueryStrategyRule(l.ctx, req.StrategyId, strategy.GetRuleWeight())
+	// 业务异常，策略规则中 rule_weight 权重规则已适用但未配置
+	if err != nil {
+		if errors.Is(err, model.ErrNotFound) {
+			return resp, nil
 		}
+		logx.Error("QueryStrategyRule error:", err)
+		return resp, err
 	}
-	// 4. 对存储的奖品进行乱序操作
-	rand.Shuffle(len(strategyAwardSearchRateTables), func(i, j int) {
-		strategyAwardSearchRateTables[i], strategyAwardSearchRateTables[j] = strategyAwardSearchRateTables[j], strategyAwardSearchRateTables[i]
-	})
-	// 5. 生成出Map集合，key值，对应的就是后续的概率值。通过概率来获得对应的奖品ID
-	shuffleStrategyAwardSearchRateTable := make(map[int]int64)
-	for i, id := range strategyAwardSearchRateTables {
-		shuffleStrategyAwardSearchRateTable[i] = id
-	}
-	// 6. 存放到 Redis
-	err = l.storeStrategyAwardSearchRateTable(id, len(shuffleStrategyAwardSearchRateTable), shuffleStrategyAwardSearchRateTable)
-	if err != nil {
-		return false, err
-	}
-	return
-}
-func (l *StrategyArmoryLogic) cacheStrategyAwardCount(StrategyId int64, AwardId int, AwardCount int) (err error) {
-	cacheKey := fmt.Sprintf(cacheStrategyAwardCountKey, StrategyId, AwardId)
-	err = l.svcCtx.BizRedis.SetCtx(l.ctx, cacheKey, strconv.Itoa(AwardCount))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-func (l *StrategyArmoryLogic) storeStrategyAwardSearchRateTable(id int64, size int, tables map[int]int64) (err error) {
-	cacheKey := fmt.Sprintf(cacheStrategyRateRange, id)
-	l.svcCtx.BizRedis.SetCtx(l.ctx, cacheKey, strconv.Itoa(size))
-	for i, v := range tables {
-		err = l.svcCtx.BizRedis.SetCtx(l.ctx, fmt.Sprintf(cacheStrategyRateRangeKey, id, i), strconv.Itoa(int(v)))
+	// 3.2.3 装配策略奖品概率查找表
+	RuleWeightValueMap := strategyRule.GetRuleWeightValues()
+	for k, v := range RuleWeightValueMap {
+		ruleWeightValues := v
+		StrategyAwardListFilter := cloneAndFilterStrategyAward(StrategyAwardList, ruleWeightValues)
+		_, err = l.assembleLotteryStrategyByRuleWeight(req.StrategyId, k, StrategyAwardListFilter)
 		if err != nil {
-			return err
+			resp = &types.StrategyArmoryResponse{IsSuccess: false}
+			logx.Error("assembleLotteryStrategyByRuleWeight error:", err)
+			return resp, err
 		}
 	}
-	return
+
+	return resp, nil
 }

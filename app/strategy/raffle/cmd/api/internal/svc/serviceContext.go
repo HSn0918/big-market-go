@@ -12,6 +12,8 @@ type ServiceContext struct {
 	Config             config.Config
 	BizRedis           *redis.Redis
 	StrategyAwardModel model.StrategyAwardModel
+	StrategyModel      model.StrategyModel
+	StrategyRuleModel  model.StrategyRuleModel
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -23,5 +25,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Config:             c,
 		BizRedis:           rdb,
 		StrategyAwardModel: model.NewStrategyAwardModel(sqlx.NewMysql(c.DataSource), c.CacheRedis),
+		StrategyModel:      model.NewStrategyModel(sqlx.NewMysql(c.DataSource), c.CacheRedis),
+		StrategyRuleModel:  model.NewStrategyRuleModel(sqlx.NewMysql(c.DataSource), c.CacheRedis),
 	}
 }
