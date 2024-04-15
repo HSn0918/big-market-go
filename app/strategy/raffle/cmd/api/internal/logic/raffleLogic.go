@@ -6,6 +6,8 @@ import (
 	"math/rand/v2"
 	"strconv"
 
+	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/logic/rule/chain"
+
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/svc"
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/types"
 
@@ -35,9 +37,13 @@ func (l *RaffleLogic) Raffle(req *types.RaffleRequest) (resp *types.RaffleRespon
 	if userId == "" || strategyId <= 0 {
 		return nil, fmt.Errorf("invalid params")
 	}
-	// 2.获取奖品
+	//todo 前置规则 责任链
+	ChainFactory := chain.NewDefaultChainFactory(l.ctx, l.svcCtx)
+	ChainFactory.OpenLogicChain(req.StrategyId)
+
+	// 获取奖品
 	awardId, err := l.getRandomAwardId(req.StrategyId)
-	// 3.返回
+	// 返回
 	resp = &types.RaffleResponse{
 		AwardId: awardId,
 	}
