@@ -27,9 +27,17 @@ func NewRaffleLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RaffleLogi
 }
 
 func (l *RaffleLogic) Raffle(req *types.RaffleRequest) (resp *types.RaffleResponse, err error) {
-	var awardId int
-	awardId, err = l.getRandomAwardId(req.StrategyId)
-	// todo:
+	// 1. 参数校验
+	strategyId := req.StrategyId
+	// userId 从context中获取
+	// 这里假设userId为"system"
+	userId := "system"
+	if userId == "" || strategyId <= 0 {
+		return nil, fmt.Errorf("invalid params")
+	}
+	// 2.获取奖品
+	awardId, err := l.getRandomAwardId(req.StrategyId)
+	// 3.返回
 	resp = &types.RaffleResponse{
 		AwardId: awardId,
 	}
@@ -37,7 +45,7 @@ func (l *RaffleLogic) Raffle(req *types.RaffleRequest) (resp *types.RaffleRespon
 }
 func (l *RaffleLogic) getRandomAwardId(StrategyId int64) (awardId int, err error) {
 	// 1.从redis中取RateRange
-	cacheRateRange := fmt.Sprintf(cacheStrategyRateRange, StrategyId)
+	cacheRateRange := fmt.Sprintf(cacheStrategyRateRangeSize, StrategyId)
 	rateRangeStr, err := l.svcCtx.BizRedis.Get(cacheRateRange)
 	if err != nil {
 		return -1, err
@@ -48,8 +56,10 @@ func (l *RaffleLogic) getRandomAwardId(StrategyId int64) (awardId int, err error
 	}
 	randInt := rand.IntN(rateRange)
 	// 2.从redis中取AwardId
-	cacheAwardId := fmt.Sprintf(cacheStrategyRateRangeKey, StrategyId, randInt)
-	awardIdStr, err := l.svcCtx.BizRedis.Get(cacheAwardId)
+
+	cacheStrategy := fmt.Sprintf(cacheStrategyRateRange, StrategyId)
+
+	awardIdStr, err := l.svcCtx.BizRedis.HgetCtx(l.ctx, cacheStrategy, strconv.Itoa(randInt))
 	if err != nil {
 		return -1, err
 	}
