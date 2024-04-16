@@ -3,6 +3,11 @@ package chain
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math/rand/v2"
+	"strconv"
+
+	"github.com/hsn0918/BigMarket/common"
 
 	"github.com/zeromicro/go-zero/core/logx"
 
@@ -11,11 +16,6 @@ import (
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/svc"
 )
 
-type strategyAwardVO struct {
-	AwardId    int64
-	LogicModel string
-}
-type LogicChainFunc func(string, int64) strategyAwardVO
 type DefaultChainFactory struct {
 	loginChainGroup map[string]LogicChainFunc
 	Chain           *LogicChain
@@ -37,44 +37,84 @@ func NewDefaultChainFactory(ctx context.Context, svcCtx *svc.ServiceContext) Def
 	}
 }
 func NewLogicChainGroup() map[string]LogicChainFunc {
-	mp := make(map[string]LogicChainFunc, 0)
+	mp := make(map[string]LogicChainFunc)
 	// todo:func 实现
-	mp[RULE_DEFAULT.Code()] = nil
-	mp[RULE_BLACKLIST.Code()] = nil
-	mp[RULE_WEIGHT.Code()] = nil
+	mp[RULE_DEFAULT.Code()] = DefaultFunc
+	mp[RULE_BLACKLIST.Code()] = BlackFunc
+	mp[RULE_WEIGHT.Code()] = WeightFunc
 	return mp
 }
 func (d *DefaultChainFactory) OpenLogicChain(strategyId int64) *LogicChain {
 	strategy, err := d.svcCtx.StrategyModel.QueryStrategy(d.ctx, strategyId)
-	switch {
-	case err == nil:
-		break
-	case errors.Is(err, model.ErrNotFound):
-		// 填充默认规则
-		d.Chain.Func = d.loginChainGroup[RULE_DEFAULT.Code()]
-		return d.Chain
-	default:
+	if err != nil {
 		logx.Error("QueryStrategy error:", err)
+		if errors.Is(err, model.ErrNotFound) {
+			return &LogicChain{Func: d.loginChainGroup[RULE_DEFAULT.Code()]}
+		}
 		return nil
 	}
 	ruleModels := strategy.GetRuleModels()
-	logicChain := new(LogicChain)
-	current := logicChain
-	for i, ruleModel := range ruleModels {
+	var logicChain *LogicChain
+	var current *LogicChain
+	for _, ruleModel := range ruleModels {
 		funcNode, exists := d.loginChainGroup[ruleModel]
 		if !exists {
-			continue // 如果规则模型不存在，跳过当前迭代
+			continue // 忽略不存在的规则
 		}
-		current.Func = funcNode
-		if i < len(ruleModels)-1 {
-			current.Next = new(LogicChain) // 为下一个规则模型创建新节点
+		if logicChain == nil {
+			logicChain = &LogicChain{Func: funcNode}
+			current = logicChain
+		} else {
+			current.Next = &LogicChain{Func: funcNode}
 			current = current.Next
 		}
-
 	}
-	// 设置最后一个逻辑链节点的处理函数
-	current.Next = new(LogicChain)
-	current.Next.Func = d.loginChainGroup[RULE_DEFAULT.Code()]
+	if current == nil {
+		return &LogicChain{Func: d.loginChainGroup[RULE_DEFAULT.Code()]}
+	}
+	current.Next = &LogicChain{Func: d.loginChainGroup[RULE_DEFAULT.Code()]}
 	d.Chain = logicChain
-	return d.Chain
+	return logicChain
+}
+func (d *DefaultChainFactory) ExecLogicGroup(strategyId int64, user string) (awardId int, err error) {
+
+	current := d.Chain
+	for current != nil {
+		if current.Func != nil {
+			s, err := current.Func(d.ctx, d.svcCtx, strategyId)
+			if err != nil {
+				logx.Error("func error:", err)
+				return -1, err
+			}
+			if s.End {
+				return s.AwardId, nil
+			}
+		}
+		current = current.Next
+	}
+	return awardId, err
+}
+func (d *DefaultChainFactory) getRandomAwardId(StrategyId int64) (awardId int, err error) {
+	// 1.从redis中取RateRange
+	cacheRateRange := fmt.Sprintf(common.StrategyRateRangeSize, StrategyId)
+	rateRangeStr, err := d.svcCtx.BizRedis.Get(cacheRateRange)
+	if err != nil {
+		return -1, err
+	}
+	rateRange, err := strconv.Atoi(rateRangeStr)
+	if err != nil {
+		return -1, err
+	}
+	randInt := rand.IntN(rateRange)
+	// 2.从redis中取AwardId
+	cacheStrategy := fmt.Sprintf(common.StrategyRateRange, StrategyId)
+	awardIdStr, err := d.svcCtx.BizRedis.HgetCtx(d.ctx, cacheStrategy, strconv.Itoa(randInt))
+	if err != nil {
+		return -1, err
+	}
+	awardId, err = strconv.Atoi(awardIdStr)
+	if err != nil {
+		return -1, err
+	}
+	return
 }

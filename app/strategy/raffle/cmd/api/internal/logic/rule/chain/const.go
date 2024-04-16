@@ -1,6 +1,18 @@
 package chain
 
+import (
+	"context"
+
+	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/svc"
+)
+
 type LogicModel string
+type strategyAwardVO struct {
+	AwardId    int
+	LogicModel string
+	End        bool
+}
+type LogicChainFunc func(context.Context, *svc.ServiceContext, int64) (strategyAwardVO, error)
 
 const (
 	RULE_DEFAULT   LogicModel = "默认抽奖"

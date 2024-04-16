@@ -32,6 +32,7 @@ func NewStrategyAwardModel(conn sqlx.SqlConn, c cache.CacheConf, opts ...cache.O
 	}
 }
 func (m *customStrategyAwardModel) QueryStrategyAwardList(ctx context.Context, StrategyId int64) (StrategyAwardList []*StrategyAward, err error) {
+	StrategyAwardList = []*StrategyAward{}
 	//query := `SELECT strategy_id, award_id, award_title, award_subtitle, award_count, award_count_surplus, award_rate, sort FROM ` + m.table + ` WHERE strategy_id = ? ORDER BY sort ASC`
 	query := `SELECT * FROM ` + m.table + ` WHERE strategy_id = ? ORDER BY sort ASC`
 	err = m.QueryRowsNoCacheCtx(ctx, &StrategyAwardList, query, StrategyId)

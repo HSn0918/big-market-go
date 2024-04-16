@@ -7,6 +7,8 @@ import (
 	"math/rand/v2"
 	"strconv"
 
+	"github.com/hsn0918/BigMarket/common"
+
 	"github.com/ahmetb/go-linq/v3"
 	"github.com/hsn0918/BigMarket/pkg/util"
 
@@ -68,7 +70,9 @@ func (l *StrategyArmoryLogic) StrategyArmory(req *types.StrategyArmoryRequest) (
 	}
 	// 3.2.3 装配策略奖品概率查找表
 	RuleWeightValueMap := strategyRule.GetRuleWeightValues()
+
 	for k, v := range RuleWeightValueMap {
+		l.storeStrategyRuleWeight(req.StrategyId, k)
 		ruleWeightValues := v
 		StrategyAwardListFilter := cloneAndFilterStrategyAward(StrategyAwardList, ruleWeightValues)
 		_, err = l.assembleLotteryStrategyByRuleWeight(req.StrategyId, k, StrategyAwardListFilter)
@@ -125,7 +129,7 @@ func (l *StrategyArmoryLogic) assembleLotteryStrategy(id int64, list []*model.St
 	return
 }
 func (l *StrategyArmoryLogic) cacheStrategyAwardCount(StrategyId int64, AwardId int, AwardCount int) (err error) {
-	cacheKey := fmt.Sprintf(cacheStrategyAwardCountKey, StrategyId, AwardId)
+	cacheKey := fmt.Sprintf(common.StrategyAwardCountKey, StrategyId, AwardId)
 	err = l.svcCtx.BizRedis.SetCtx(l.ctx, cacheKey, strconv.Itoa(AwardCount))
 	if err != nil {
 		return err
@@ -134,10 +138,10 @@ func (l *StrategyArmoryLogic) cacheStrategyAwardCount(StrategyId int64, AwardId 
 }
 
 //	func (l *StrategyArmoryLogic) storeStrategyAwardSearchRateTable(id int64, size int, tables map[int]int64) (err error) {
-//		cacheKey := fmt.Sprintf(cacheStrategyRateRange, id)
+//		cacheKey := fmt.Sprintf(StrategyRateRange, id)
 //		l.svcCtx.BizRedis.SetCtx(l.ctx, cacheKey, strconv.Itoa(size))
 //		for i, v := range tables {
-//			err = l.svcCtx.BizRedis.SetCtx(l.ctx, fmt.Sprintf(cacheStrategyRateRangeKey, id, i), strconv.Itoa(int(v)))
+//			err = l.svcCtx.BizRedis.SetCtx(l.ctx, fmt.Sprintf(StrategyRateRangeKey, id, i), strconv.Itoa(int(v)))
 //			if err != nil {
 //				return err
 //			}
@@ -146,10 +150,10 @@ func (l *StrategyArmoryLogic) cacheStrategyAwardCount(StrategyId int64, AwardId 
 //	}
 func (l *StrategyArmoryLogic) storeStrategyAwardSearchRateTable(id int64, size int, tables map[int]int64) (err error) {
 	// 主键使用给定的常量格式化
-	cacheKey := fmt.Sprintf(cacheStrategyRateRange, id)
+	cacheKey := fmt.Sprintf(common.StrategyRateRange, id)
 
 	// 存储表的大小信息
-	err = l.svcCtx.BizRedis.SetCtx(l.ctx, fmt.Sprintf(cacheStrategyRateRangeSize, id), strconv.Itoa(size))
+	err = l.svcCtx.BizRedis.SetCtx(l.ctx, fmt.Sprintf(common.StrategyRateRangeSize, id), strconv.Itoa(size))
 	if err != nil {
 		return err
 	}
@@ -202,10 +206,19 @@ func (l *StrategyArmoryLogic) storeStrategyAwardSearchRateTableByRuleWeight(id i
 		if v == 0 {
 			continue
 		}
-		err = l.svcCtx.BizRedis.HsetCtx(l.ctx, fmt.Sprintf(cacheStrategyRateRangeRuleWeightKey, id, m), strconv.Itoa(i), strconv.FormatInt(v, 10))
+		err = l.svcCtx.BizRedis.HsetCtx(l.ctx, fmt.Sprintf(common.StrategyRateRangeRuleWeightKey, id, m), strconv.Itoa(i), strconv.FormatInt(v, 10))
 		if err != nil {
 			return err
 		}
 	}
 	return
+}
+func (l *StrategyArmoryLogic) storeStrategyRuleWeight(id int64, rule string) (err error) {
+	cacheStrategyRuleWeightKey := fmt.Sprintf(common.StrategyRuleWeightKey, id)
+	err = l.svcCtx.BizRedis.HsetCtx(l.ctx, cacheStrategyRuleWeightKey, rule, rule)
+	if err != nil {
+		logx.Error("storeStrategyRuleWeight error:", err)
+		return err
+	}
+	return nil
 }
