@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/zeromicro/go-zero/core/stores/sqlc"
@@ -54,10 +55,10 @@ func (m *customStrategyModel) QueryStrategy(ctx context.Context, StrategyId int6
 	strategy = &Strategy{}
 	query := `SELECT * FROM ` + m.table + ` WHERE strategy_id = ? LIMIT 1`
 	err = m.CachedConn.QueryRowNoCacheCtx(ctx, strategy, query, StrategyId) // 注意这里直接传入 strategy，而不是 &resp
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 		return strategy, nil // 注意这里返回 strategy
-	case sqlc.ErrNotFound:
+	case errors.Is(err, sqlc.ErrNotFound):
 		return nil, ErrNotFound
 	default:
 		return nil, err

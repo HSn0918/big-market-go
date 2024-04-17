@@ -13,18 +13,18 @@ import (
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/svc"
 )
 
-func DefaultFunc(ctx context.Context, svc *svc.ServiceContext, strategyId int64) (strategyAwardVO, error) {
+func DefaultFunc(ctx context.Context, svc *svc.ServiceContext, strategyId int64) (StrategyAwardVO, error) {
 	// 1.redis中取rateRange
 	cacheRateRange := fmt.Sprintf(common.StrategyRateRangeSize, strategyId)
 	rateRangeStr, err := svc.BizRedis.GetCtx(ctx, cacheRateRange)
 	if err != nil {
 		logx.Error("redis get rateRange error:", err)
-		return strategyAwardVO{}, err
+		return StrategyAwardVO{}, err
 	}
 	rateRange, err := strconv.Atoi(rateRangeStr)
 	if err != nil {
 		logx.Error("strconv.Atoi error:", err)
-		return strategyAwardVO{}, err
+		return StrategyAwardVO{}, err
 	}
 	// 2.redis中取awardId
 	randInt := rand.IntN(rateRange)
@@ -32,15 +32,15 @@ func DefaultFunc(ctx context.Context, svc *svc.ServiceContext, strategyId int64)
 	awardIdStr, err := svc.BizRedis.HgetCtx(ctx, cacheStrategy, strconv.Itoa(randInt))
 	if err != nil {
 		logx.Error("redis get awardId error:", err)
-		return strategyAwardVO{}, err
+		return StrategyAwardVO{}, err
 	}
 	awardId, err := strconv.Atoi(awardIdStr)
 	if err != nil {
 		logx.Error("strconv.Atoi error:", err)
-		return strategyAwardVO{}, err
+		return StrategyAwardVO{}, err
 	}
 	// 3.返回
-	return strategyAwardVO{
+	return StrategyAwardVO{
 		AwardId:    awardId,
 		End:        true,
 		LogicModel: RULE_DEFAULT.Code(),

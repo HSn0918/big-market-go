@@ -1,4 +1,4 @@
 .idea
-.log
+/app/strategy/raffle/cmd/api/logs
 /logs
 .gitignore

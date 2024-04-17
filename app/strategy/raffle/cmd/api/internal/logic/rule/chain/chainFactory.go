@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/model"
+
 	"math/rand/v2"
 	"strconv"
 
@@ -11,16 +14,14 @@ import (
 
 	"github.com/zeromicro/go-zero/core/logx"
 
-	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/model"
-
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/svc"
 )
 
 type DefaultChainFactory struct {
 	loginChainGroup map[string]LogicChainFunc
 	Chain           *LogicChain
-	svcCtx          *svc.ServiceContext
 	ctx             context.Context
+	svcCtx          *svc.ServiceContext
 }
 
 type LogicChain struct {
@@ -38,7 +39,6 @@ func NewDefaultChainFactory(ctx context.Context, svcCtx *svc.ServiceContext) Def
 }
 func NewLogicChainGroup() map[string]LogicChainFunc {
 	mp := make(map[string]LogicChainFunc)
-	// todo:func 实现
 	mp[RULE_DEFAULT.Code()] = DefaultFunc
 	mp[RULE_BLACKLIST.Code()] = BlackFunc
 	mp[RULE_WEIGHT.Code()] = WeightFunc
@@ -76,23 +76,26 @@ func (d *DefaultChainFactory) OpenLogicChain(strategyId int64) *LogicChain {
 	d.Chain = logicChain
 	return logicChain
 }
-func (d *DefaultChainFactory) ExecLogicGroup(strategyId int64, user string) (awardId int, err error) {
-
+func (d *DefaultChainFactory) ExecLogicChain(strategyId int64) (strategyAwardVO StrategyAwardVO, err error) {
 	current := d.Chain
 	for current != nil {
 		if current.Func != nil {
-			s, err := current.Func(d.ctx, d.svcCtx, strategyId)
+			strategyAwardVO, err = current.Func(d.ctx, d.svcCtx, strategyId)
 			if err != nil {
 				logx.Error("func error:", err)
-				return -1, err
+				return StrategyAwardVO{
+					AwardId:    0,
+					LogicModel: RULE_ERROR.Code(),
+					End:        false,
+				}, err
 			}
-			if s.End {
-				return s.AwardId, nil
+			if strategyAwardVO.End {
+				return strategyAwardVO, nil
 			}
 		}
 		current = current.Next
 	}
-	return awardId, err
+	return strategyAwardVO, err
 }
 func (d *DefaultChainFactory) getRandomAwardId(StrategyId int64) (awardId int, err error) {
 	// 1.从redis中取RateRange

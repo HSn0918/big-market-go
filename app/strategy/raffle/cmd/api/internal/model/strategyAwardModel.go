@@ -18,6 +18,7 @@ type (
 	StrategyAwardModel interface {
 		strategyAwardModel
 		QueryStrategyAwardList(ctx context.Context, StrategyId int64) (StrategyAwardList []*StrategyAward, err error)
+		QueryStrategyAward(ctx context.Context, StrategyId int64, awardId int) (StrategyAward *StrategyAward, err error)
 	}
 
 	customStrategyAwardModel struct {
@@ -31,6 +32,7 @@ func NewStrategyAwardModel(conn sqlx.SqlConn, c cache.CacheConf, opts ...cache.O
 		defaultStrategyAwardModel: newStrategyAwardModel(conn, c, opts...),
 	}
 }
+
 func (m *customStrategyAwardModel) QueryStrategyAwardList(ctx context.Context, StrategyId int64) (StrategyAwardList []*StrategyAward, err error) {
 	StrategyAwardList = []*StrategyAward{}
 	//query := `SELECT strategy_id, award_id, award_title, award_subtitle, award_count, award_count_surplus, award_rate, sort FROM ` + m.table + ` WHERE strategy_id = ? ORDER BY sort ASC`
@@ -39,6 +41,19 @@ func (m *customStrategyAwardModel) QueryStrategyAwardList(ctx context.Context, S
 	switch {
 	case err == nil:
 		return StrategyAwardList, nil
+	case errors.Is(err, sqlc.ErrNotFound):
+		return nil, ErrNotFound
+	default:
+		return nil, err
+	}
+}
+func (m *customStrategyAwardModel) QueryStrategyAward(ctx context.Context, StrategyId int64, awardId int) (strategyAward *StrategyAward, err error) {
+	strategyAward = &StrategyAward{}
+	query := `SELECT * FROM ` + m.table + `WHERE strategy_id = ? and award_id = ? limit 1`
+	err = m.QueryRowNoCacheCtx(ctx, &strategyAward, query, StrategyId, awardId)
+	switch {
+	case err == nil:
+		return strategyAward, nil
 	case errors.Is(err, sqlc.ErrNotFound):
 		return nil, ErrNotFound
 	default:

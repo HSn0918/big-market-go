@@ -10,12 +10,12 @@ import (
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/svc"
 )
 
-func BlackFunc(ctx context.Context, svc *svc.ServiceContext, strategyId int64) (strategyAwardVO, error) {
+func BlackFunc(ctx context.Context, svc *svc.ServiceContext, strategyId int64) (StrategyAwardVO, error) {
 	user := ctx.Value("user").(string)
 	// 1.查询规则值配置
 	strategy, err := svc.StrategyRuleModel.QueryStrategyRule(ctx, strategyId, RULE_BLACKLIST.Code())
 	if err != nil {
-		return strategyAwardVO{}, err
+		return StrategyAwardVO{}, err
 	}
 	ruleValue := strategy.RuleValue
 	ruleValueGroup := strings.Split(ruleValue, common.COLON)
@@ -25,7 +25,7 @@ func BlackFunc(ctx context.Context, svc *svc.ServiceContext, strategyId int64) (
 	// 2.判断是否在黑名单
 	for _, blackUser := range blackUsers {
 		if user == blackUser {
-			return strategyAwardVO{
+			return StrategyAwardVO{
 				AwardId:    awardId,
 				End:        true,
 				LogicModel: RULE_BLACKLIST.Code(),
@@ -33,7 +33,7 @@ func BlackFunc(ctx context.Context, svc *svc.ServiceContext, strategyId int64) (
 		}
 	}
 	// 3.不在黑名单中
-	return strategyAwardVO{
+	return StrategyAwardVO{
 		AwardId:    101,
 		End:        false,
 		LogicModel: RULE_BLACKLIST.Code(),

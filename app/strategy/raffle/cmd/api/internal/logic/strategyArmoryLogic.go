@@ -7,6 +7,9 @@ import (
 	"math/rand/v2"
 	"strconv"
 
+	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/code"
+	"github.com/hsn0918/BigMarket/pkg/xcode"
+
 	"github.com/hsn0918/BigMarket/common"
 
 	"github.com/ahmetb/go-linq/v3"
@@ -55,7 +58,7 @@ func (l *StrategyArmoryLogic) StrategyArmory(req *types.StrategyArmoryRequest) (
 		}
 		resp = &types.StrategyArmoryResponse{IsSuccess: false}
 		logx.Error("QueryStrategy error:", err)
-		return resp, err
+		return resp, code.StrategyArmoryEmpty
 	}
 	// 3.2.2 "rule_weight"规则存在，则需要进行权重策略配置
 
@@ -66,7 +69,7 @@ func (l *StrategyArmoryLogic) StrategyArmory(req *types.StrategyArmoryRequest) (
 			return resp, nil
 		}
 		logx.Error("QueryStrategyRule error:", err)
-		return resp, err
+		return resp, code.StrategyArmoryFail
 	}
 	// 3.2.3 装配策略奖品概率查找表
 	RuleWeightValueMap := strategyRule.GetRuleWeightValues()
@@ -79,7 +82,7 @@ func (l *StrategyArmoryLogic) StrategyArmory(req *types.StrategyArmoryRequest) (
 		if err != nil {
 			resp = &types.StrategyArmoryResponse{IsSuccess: false}
 			logx.Error("assembleLotteryStrategyByRuleWeight error:", err)
-			return resp, err
+			return resp, xcode.ServerErr
 		}
 	}
 
@@ -206,7 +209,10 @@ func (l *StrategyArmoryLogic) storeStrategyAwardSearchRateTableByRuleWeight(id i
 		if v == 0 {
 			continue
 		}
-		err = l.svcCtx.BizRedis.HsetCtx(l.ctx, fmt.Sprintf(common.StrategyRateRangeRuleWeightKey, id, m), strconv.Itoa(i), strconv.FormatInt(v, 10))
+		err = l.svcCtx.BizRedis.HsetCtx(l.ctx,
+			fmt.Sprintf(common.StrategyRateRangeRuleWeightKey, id, m),
+			strconv.Itoa(i),
+			strconv.FormatInt(v, 10))
 		if err != nil {
 			return err
 		}
