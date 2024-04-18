@@ -31,7 +31,7 @@ func NewRuleTreeNodeModel(conn sqlx.SqlConn, c cache.CacheConf, opts ...cache.Op
 }
 func (m *customRuleTreeNodeModel) QueryRuleTreeNodesByTreeId(ctx context.Context, treeId string) (ruleTreeNodes []*RuleTreeNode, err error) {
 	ruleTreeNodes = []*RuleTreeNode{}
-	query := `SELECT * FORM` + m.table + `WHERE tree_id = ? `
+	query := `SELECT * FROM` + m.table + `WHERE tree_id = ? `
 	err = m.QueryRowsNoCacheCtx(ctx, &ruleTreeNodes, query, treeId)
 	switch {
 	case err == nil:

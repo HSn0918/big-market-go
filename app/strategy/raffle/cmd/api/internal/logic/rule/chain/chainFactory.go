@@ -70,6 +70,7 @@ func (d *DefaultChainFactory) OpenLogicChain(strategyId int64) *LogicChain {
 		}
 	}
 	if current == nil {
+		d.Chain = &LogicChain{Func: d.loginChainGroup[RULE_DEFAULT.Code()]}
 		return &LogicChain{Func: d.loginChainGroup[RULE_DEFAULT.Code()]}
 	}
 	current.Next = &LogicChain{Func: d.loginChainGroup[RULE_DEFAULT.Code()]}

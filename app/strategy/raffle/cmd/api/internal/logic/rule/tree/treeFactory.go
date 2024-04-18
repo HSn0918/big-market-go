@@ -31,12 +31,14 @@ func NewDefaultTreeFactor(ctx context.Context, svcCtx *svc.ServiceContext) Defau
 		ctx:            ctx,
 		svcCtx:         svcCtx,
 		tree:           new(RuleTree),
-		logicTreeGroup: make(map[string]Logic),
+		logicTreeGroup: NewLogicTreeGroup(),
 	}
 }
 func NewLogicTreeGroup() map[string]Logic {
 	mp := make(map[string]Logic)
-	mp["default"] = nil
+	mp[RULE_LOCK.Code()] = RuleLockFunc
+	mp[RULE_STOCK.Code()] = RuleStockFunc
+	mp[RULE_LUCK_AWARD.Code()] = RuleLuckAwardFunc
 	return mp
 }
 func (d DefaultTreeFactor) OpenLogicTree(strategyAward *model.StrategyAward) *DecisionTreeEngine {
@@ -98,10 +100,63 @@ func (d DefaultTreeFactor) OpenLogicTree(strategyAward *model.StrategyAward) *De
 		tree:           ruleTree,
 	}
 }
-func (d DecisionTreeEngine) Process(userId string, strategyId int64, awardId int) (StrategyAwardVO, error) {
+func (d DecisionTreeEngine) decisionLogic(matterValue string, nodeLine *RuleTreeNodeLine) bool {
+	switch nodeLine.RuleLimitType {
+	case EQUAL:
+		return matterValue == nodeLine.RuleLimitValue
+	case GT:
+	case LT:
+	case GE:
+	case LE:
+	default:
+		return false
+	}
+	return false
+}
+func (d DecisionTreeEngine) Process(ctx context.Context, userId string, strategyId int64, awardId int) (StrategyAwardVO, error) {
+	strategyAwardVO := StrategyAwardVO{}
+	// 1.获取基本信息
+	nextNode := d.tree.TreeRootRuleNode
+	treeNodeMap := d.tree.TreeNodeMap
+	// 2.根节点
+	ruleTreeNode := treeNodeMap[nextNode]
+	// 3.判断是否满足条件
+	for ruleTreeNode != nil {
+		// 3.1 获取决策节点
+		logicTreeNode := d.logicTreeGroup[ruleTreeNode.RuleKey]
+		ruleValue := ruleTreeNode.RuleValue
+		// 3.2 决策节点计算
+		logicEntity, err := logicTreeNode(ctx, userId, strategyId, awardId, ruleValue)
+		if err != nil {
+			return StrategyAwardVO{
+				AwardId:        100,
+				AwardRuleValue: ruleValue,
+				End:            true,
+			}, err
+		}
+
+		ruleLogicCheckType := logicEntity.RuleLogicCheckTypeVO
+		strategyAwardVO = logicEntity.StrategyAwardVO
+		// 3.3 获取下个节点
+		nextNode = d.nextNode(ruleLogicCheckType.Code(), ruleTreeNode.TreeNodeLineVOList)
+		ruleTreeNode = treeNodeMap[nextNode]
+	}
+
 	return StrategyAwardVO{
-		AwardId:        0,
-		AwardRuleValue: "",
-		End:            false,
+		AwardId:        strategyAwardVO.AwardId,
+		AwardRuleValue: strategyAwardVO.AwardRuleValue,
+		End:            true,
 	}, nil
+}
+func (d DecisionTreeEngine) nextNode(matterValue string, treeNodeLineVOList []*RuleTreeNodeLine) string {
+	if treeNodeLineVOList == nil || len(treeNodeLineVOList) == 0 {
+		return ""
+	}
+	for _, line := range treeNodeLineVOList {
+		if d.decisionLogic(matterValue, line) {
+			return line.RuleNodeTo
+		}
+	}
+	return ""
+
 }

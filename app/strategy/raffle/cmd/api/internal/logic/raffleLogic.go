@@ -41,7 +41,7 @@ func (l *RaffleLogic) Raffle(req *types.RaffleRequest) (resp *types.RaffleRespon
 		return nil, fmt.Errorf("invalid params")
 	}
 	l.ctx = context.WithValue(l.ctx, "user", user)
-	l.ctx = context.WithValue(l.ctx, "usedPoints", "4000")
+	l.ctx = context.WithValue(l.ctx, "usedPoints", "2000")
 	// 2.责任链接管 如果是黑名单，权重直接返回
 	ChainFactory := chain.NewDefaultChainFactory(l.ctx, l.svcCtx)
 	ChainFactory.OpenLogicChain(req.StrategyId)
@@ -74,9 +74,9 @@ func (l *RaffleLogic) Raffle(req *types.RaffleRequest) (resp *types.RaffleRespon
 		return &types.RaffleResponse{AwardId: ChainStrategyAwardVO.AwardId}, nil
 	}
 	// 3.3 建树并且使用决策
-	TreeStrategyAwardVO, err := tree.NewDefaultTreeFactor(l.ctx, l.svcCtx).
-		OpenLogicTree(strategyAward).
-		Process(user, req.StrategyId, ChainStrategyAwardVO.AwardId)
+	DefaultTreeFactor := tree.NewDefaultTreeFactor(l.ctx, l.svcCtx)
+	enginee := DefaultTreeFactor.OpenLogicTree(strategyAward)
+	TreeStrategyAwardVO, err := enginee.Process(l.ctx, user, req.StrategyId, ChainStrategyAwardVO.AwardId)
 	if err != nil {
 		logx.Error("NewDefaultTreeFactor.Process error:", err)
 		return nil, err

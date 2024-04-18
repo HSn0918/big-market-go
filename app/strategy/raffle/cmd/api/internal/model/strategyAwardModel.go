@@ -18,7 +18,7 @@ type (
 	StrategyAwardModel interface {
 		strategyAwardModel
 		QueryStrategyAwardList(ctx context.Context, StrategyId int64) (StrategyAwardList []*StrategyAward, err error)
-		QueryStrategyAward(ctx context.Context, StrategyId int64, awardId int) (StrategyAward *StrategyAward, err error)
+		QueryStrategyAward(ctx context.Context, StrategyId int64, awardId int) (strategyAward *StrategyAward, err error)
 	}
 
 	customStrategyAwardModel struct {
@@ -47,10 +47,10 @@ func (m *customStrategyAwardModel) QueryStrategyAwardList(ctx context.Context, S
 		return nil, err
 	}
 }
-func (m *customStrategyAwardModel) QueryStrategyAward(ctx context.Context, StrategyId int64, awardId int) (strategyAward *StrategyAward, err error) {
-	strategyAward = &StrategyAward{}
-	query := `SELECT * FROM ` + m.table + `WHERE strategy_id = ? and award_id = ? limit 1`
-	err = m.QueryRowNoCacheCtx(ctx, &strategyAward, query, StrategyId, awardId)
+func (m *customStrategyAwardModel) QueryStrategyAward(ctx context.Context, strategyId int64, awardId int) (*StrategyAward, error) {
+	strategyAward := &StrategyAward{}
+	query := "SELECT * FROM " + m.table + " WHERE strategy_id = ? AND award_id = ? LIMIT 1"
+	err := m.QueryRowNoCacheCtx(ctx, strategyAward, query, strategyId, awardId)
 	switch {
 	case err == nil:
 		return strategyAward, nil
