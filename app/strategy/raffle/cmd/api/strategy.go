@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+
+	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/logic"
+	"github.com/robfig/cron/v3"
 
 	"github.com/hsn0918/BigMarket/pkg/xcode"
 	"github.com/zeromicro/go-zero/rest/httpx"
@@ -29,7 +33,8 @@ func main() {
 	handler.RegisterHandlers(server, ctx)
 	httpx.SetErrorHandler(xcode.ErrHandler)
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
-	//cronJob := logic.NewCronJob(context.Background(), ctx, cron.New(cron.WithSeconds()))
-	//cronJob.Job.Start()
+	// 定时任务
+	cronJob := logic.NewCronJob(context.Background(), ctx, cron.New(cron.WithSeconds()))
+	cronJob.Job.Start()
 	server.Start()
 }

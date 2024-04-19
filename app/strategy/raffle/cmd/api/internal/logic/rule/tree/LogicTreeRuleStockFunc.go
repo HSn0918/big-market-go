@@ -48,7 +48,7 @@ func subtractionAwardStock(ctx context.Context, svc *svc.ServiceContext, strateg
 	// 1. 按照cacheKey decr 后的值，如 99、98、97 和 key 组成为库存锁的key进行使用。
 	// 2. 加锁为了兜底，如果后续有恢复库存，手动处理等，也不会超卖。因为所有的可用库存key，都被加锁了。
 	lockKey := fmt.Sprintf(common.StrategyAwardCountQueryKey+"#%d", strategyId, awardId, surplus)
-	lock, _ := svc.BizRedis.Setnx(lockKey, "lock")
+	lock, _ := svc.BizRedis.SetnxEx(lockKey, "lock", 60*60*24)
 	if !lock {
 		logx.Info("策略奖品库存加锁失败：", lockKey)
 		return false

@@ -39,8 +39,9 @@ func (c *CronJob) addTasks() {
 			strategyAward := strings.Split(strings.Split(strategyString, common.COLON)[1], common.SPLIT)
 			strategyId, _ := strconv.Atoi(strategyAward[0])
 			awardId, _ := strconv.Atoi(strategyAward[1])
-			fmt.Printf("strategyId: %d, awardId: %d\n", strategyId, awardId)
+			fmt.Printf("定时任务更新库存：strategyId: %d, awardId: %d\n", strategyId, awardId)
 			_ = c.svcCtx.StrategyAwardModel.UpdateAwardStock(int64(strategyId), awardId)
 		}
+
 	})
 }
