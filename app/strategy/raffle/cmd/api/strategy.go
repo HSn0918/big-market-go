@@ -25,10 +25,11 @@ func main() {
 
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()
-
 	ctx := svc.NewServiceContext(c)
 	handler.RegisterHandlers(server, ctx)
 	httpx.SetErrorHandler(xcode.ErrHandler)
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
+	//cronJob := logic.NewCronJob(context.Background(), ctx, cron.New(cron.WithSeconds()))
+	//cronJob.Job.Start()
 	server.Start()
 }

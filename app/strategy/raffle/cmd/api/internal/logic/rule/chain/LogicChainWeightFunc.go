@@ -12,10 +12,10 @@ import (
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/svc"
 )
 
-func WeightFunc(ctx context.Context, svc *svc.ServiceContext, strategyId int64) (StrategyAwardVO, error) {
+func WeightFunc(ctx context.Context, svcCtx *svc.ServiceContext, strategyId int64) (StrategyAwardVO, error) {
 	// 0.获取rule_weight
 	cacheStrategyRuleWeightKey := fmt.Sprintf(common.StrategyRuleWeightKey, strategyId)
-	ruleWeightMap, err := svc.BizRedis.HgetallCtx(ctx, cacheStrategyRuleWeightKey)
+	ruleWeightMap, err := svcCtx.BizRedis.HgetallCtx(ctx, cacheStrategyRuleWeightKey)
 	if err != nil {
 		logx.Error("HgetallCtx error:", err)
 		return StrategyAwardVO{
@@ -61,13 +61,13 @@ func WeightFunc(ctx context.Context, svc *svc.ServiceContext, strategyId int64) 
 		// 用户积分小于最小的时候
 		// 直接返回，因为chain最后都为defaultFunc
 		return StrategyAwardVO{
-			AwardId:    100,
+			AwardId:    101,
 			LogicModel: RULE_WEIGHT.Code(),
 			End:        false,
 		}, nil
 	}
 	cacheStrategyRateRangeRuleWeightKey := fmt.Sprintf(common.StrategyRateRangeRuleWeightKey, strategyId, strconv.Itoa(selectedWeight))
-	weightRangMap, err := svc.BizRedis.HgetallCtx(ctx, cacheStrategyRateRangeRuleWeightKey)
+	weightRangMap, err := svcCtx.BizRedis.HgetallCtx(ctx, cacheStrategyRateRangeRuleWeightKey)
 	var awardId int
 	for _, value := range weightRangMap {
 		awardId, err = strconv.Atoi(value)

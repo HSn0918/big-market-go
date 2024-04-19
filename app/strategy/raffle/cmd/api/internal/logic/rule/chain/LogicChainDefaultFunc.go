@@ -13,10 +13,10 @@ import (
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/svc"
 )
 
-func DefaultFunc(ctx context.Context, svc *svc.ServiceContext, strategyId int64) (StrategyAwardVO, error) {
+func DefaultFunc(ctx context.Context, svcCtx *svc.ServiceContext, strategyId int64) (StrategyAwardVO, error) {
 	// 1.redis中取rateRange
 	cacheRateRange := fmt.Sprintf(common.StrategyRateRangeSize, strategyId)
-	rateRangeStr, err := svc.BizRedis.GetCtx(ctx, cacheRateRange)
+	rateRangeStr, err := svcCtx.BizRedis.GetCtx(ctx, cacheRateRange)
 	if err != nil {
 		logx.Error("redis get rateRange error:", err)
 		return StrategyAwardVO{}, err
@@ -29,7 +29,7 @@ func DefaultFunc(ctx context.Context, svc *svc.ServiceContext, strategyId int64)
 	// 2.redis中取awardId
 	randInt := rand.IntN(rateRange)
 	cacheStrategy := fmt.Sprintf(common.StrategyRateRange, strategyId)
-	awardIdStr, err := svc.BizRedis.HgetCtx(ctx, cacheStrategy, strconv.Itoa(randInt))
+	awardIdStr, err := svcCtx.BizRedis.HgetCtx(ctx, cacheStrategy, strconv.Itoa(randInt))
 	if err != nil {
 		logx.Error("redis get awardId error:", err)
 		return StrategyAwardVO{}, err

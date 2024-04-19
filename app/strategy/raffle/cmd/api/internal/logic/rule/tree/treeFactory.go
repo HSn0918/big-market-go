@@ -113,7 +113,7 @@ func (d DecisionTreeEngine) decisionLogic(matterValue string, nodeLine *RuleTree
 	}
 	return false
 }
-func (d DecisionTreeEngine) Process(ctx context.Context, userId string, strategyId int64, awardId int) (StrategyAwardVO, error) {
+func (d DecisionTreeEngine) Process(ctx context.Context, svcCtx *svc.ServiceContext, userId string, strategyId int64, awardId int) (StrategyAwardVO, error) {
 	strategyAwardVO := StrategyAwardVO{}
 	// 1.获取基本信息
 	nextNode := d.tree.TreeRootRuleNode
@@ -126,7 +126,7 @@ func (d DecisionTreeEngine) Process(ctx context.Context, userId string, strategy
 		logicTreeNode := d.logicTreeGroup[ruleTreeNode.RuleKey]
 		ruleValue := ruleTreeNode.RuleValue
 		// 3.2 决策节点计算
-		logicEntity, err := logicTreeNode(ctx, userId, strategyId, awardId, ruleValue)
+		logicEntity, err := logicTreeNode(ctx, svcCtx, userId, strategyId, awardId, ruleValue)
 		if err != nil {
 			return StrategyAwardVO{
 				AwardId:        100,

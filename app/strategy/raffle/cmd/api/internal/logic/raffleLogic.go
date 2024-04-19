@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/code"
+
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/logic/rule/tree"
 
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
@@ -36,7 +38,7 @@ func (l *RaffleLogic) Raffle(req *types.RaffleRequest) (resp *types.RaffleRespon
 	strategyId := req.StrategyId
 	// userId 从context中获取
 	// 这里假设userId为"system"
-	user := "user00"
+	user := "user"
 	if user == "" || strategyId <= 0 {
 		return nil, fmt.Errorf("invalid params")
 	}
@@ -48,7 +50,7 @@ func (l *RaffleLogic) Raffle(req *types.RaffleRequest) (resp *types.RaffleRespon
 	ChainStrategyAwardVO, err := ChainFactory.ExecLogicChain(req.StrategyId)
 	if err != nil {
 		logx.Error("ChainFactory.ExecLogicChain error:", err)
-		return nil, err
+		return nil, code.RaffleFail
 	}
 	if !chain.CheckStrategyAwardContinue(ChainStrategyAwardVO.LogicModel) {
 		resp = &types.RaffleResponse{
@@ -66,7 +68,7 @@ func (l *RaffleLogic) Raffle(req *types.RaffleRequest) (resp *types.RaffleRespon
 			}, nil
 		}
 		logx.Error("QueryStrategyAward error:", err)
-		return nil, err
+		return nil, code.RaffleFail
 	}
 	// 3.2 获取ruleModels
 	ruleModel := strategyAward.RuleModels.String
@@ -76,10 +78,10 @@ func (l *RaffleLogic) Raffle(req *types.RaffleRequest) (resp *types.RaffleRespon
 	// 3.3 建树并且使用决策
 	DefaultTreeFactor := tree.NewDefaultTreeFactor(l.ctx, l.svcCtx)
 	enginee := DefaultTreeFactor.OpenLogicTree(strategyAward)
-	TreeStrategyAwardVO, err := enginee.Process(l.ctx, user, req.StrategyId, ChainStrategyAwardVO.AwardId)
+	TreeStrategyAwardVO, err := enginee.Process(l.ctx, l.svcCtx, user, req.StrategyId, ChainStrategyAwardVO.AwardId)
 	if err != nil {
 		logx.Error("NewDefaultTreeFactor.Process error:", err)
-		return nil, err
+		return nil, code.RaffleFail
 	}
 	// 返回
 	resp = &types.RaffleResponse{

@@ -1,13 +1,17 @@
 package tree
 
-import "context"
+import (
+	"context"
 
-func RuleLuckAwardFunc(ctx context.Context, userId string, strategyId int64, awardId int, ruleValue string) (TreeActionEntity, error) {
+	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/svc"
+)
+
+func RuleLuckAwardFunc(ctx context.Context, svc *svc.ServiceContext, userId string, strategyId int64, awardId int, ruleValue string) (TreeActionEntity, error) {
 	return TreeActionEntity{
 		RuleLogicCheckTypeVO: TAKE_OVER,
 		StrategyAwardVO: StrategyAwardVO{
-			AwardId:        awardId,
-			AwardRuleValue: ruleValue,
+			AwardId:        101,
+			AwardRuleValue: "1,100",
 			End:            false,
 		},
 	}, nil

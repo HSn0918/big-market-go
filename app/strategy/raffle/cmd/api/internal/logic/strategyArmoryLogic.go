@@ -127,7 +127,7 @@ func (l *StrategyArmoryLogic) assembleLotteryStrategy(id int64, list []*model.St
 	// 6. 存放到 Redis
 	err = l.storeStrategyAwardSearchRateTable(id, len(shuffleStrategyAwardSearchRateTable), shuffleStrategyAwardSearchRateTable)
 	if err != nil {
-		return false, err
+		return false, code.StrategyArmoryFail
 	}
 	return
 }

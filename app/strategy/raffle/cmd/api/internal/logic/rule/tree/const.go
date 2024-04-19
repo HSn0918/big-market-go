@@ -1,6 +1,10 @@
 package tree
 
-import "context"
+import (
+	"context"
+
+	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/svc"
+)
 
 type StrategyAwardVO struct {
 	AwardId        int
@@ -14,7 +18,7 @@ type TreeActionEntity struct {
 	RuleLogicCheckTypeVO RuleLogicCheckTypeVO
 	StrategyAwardVO      StrategyAwardVO
 }
-type Logic func(ctx context.Context, userId string, strategyId int64, awardId int, ruleValue string) (TreeActionEntity, error)
+type Logic func(ctx context.Context, svc *svc.ServiceContext, userId string, strategyId int64, awardId int, ruleValue string) (TreeActionEntity, error)
 
 const (
 	RULE_LOCK       LogicModel           = "限定用户已完成N次抽奖后解锁"

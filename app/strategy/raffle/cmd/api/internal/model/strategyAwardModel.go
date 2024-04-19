@@ -19,6 +19,7 @@ type (
 		strategyAwardModel
 		QueryStrategyAwardList(ctx context.Context, StrategyId int64) (StrategyAwardList []*StrategyAward, err error)
 		QueryStrategyAward(ctx context.Context, StrategyId int64, awardId int) (strategyAward *StrategyAward, err error)
+		UpdateAwardStock(strategyId int64, awardId int) (err error)
 	}
 
 	customStrategyAwardModel struct {
@@ -32,7 +33,11 @@ func NewStrategyAwardModel(conn sqlx.SqlConn, c cache.CacheConf, opts ...cache.O
 		defaultStrategyAwardModel: newStrategyAwardModel(conn, c, opts...),
 	}
 }
-
+func (m *customStrategyAwardModel) UpdateAwardStock(strategyId int64, awardId int) (err error) {
+	query := `UPDATE ` + m.table + ` SET award_count_surplus = award_count_surplus - 1 WHERE strategy_id = ? AND award_id = ? AND award_count_surplus > 0`
+	_, err = m.ExecNoCacheCtx(context.Background(), query, strategyId, awardId)
+	return
+}
 func (m *customStrategyAwardModel) QueryStrategyAwardList(ctx context.Context, StrategyId int64) (StrategyAwardList []*StrategyAward, err error) {
 	StrategyAwardList = []*StrategyAward{}
 	//query := `SELECT strategy_id, award_id, award_title, award_subtitle, award_count, award_count_surplus, award_rate, sort FROM ` + m.table + ` WHERE strategy_id = ? ORDER BY sort ASC`

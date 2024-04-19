@@ -17,5 +17,7 @@ Log:
     Level: info
     Encoding: plain
     Path: logs
-    
+    KeepDays: 3
+    MaxSize: 30
+
 

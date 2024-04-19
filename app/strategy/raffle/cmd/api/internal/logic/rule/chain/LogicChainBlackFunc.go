@@ -10,10 +10,10 @@ import (
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/svc"
 )
 
-func BlackFunc(ctx context.Context, svc *svc.ServiceContext, strategyId int64) (StrategyAwardVO, error) {
+func BlackFunc(ctx context.Context, svcCtx *svc.ServiceContext, strategyId int64) (StrategyAwardVO, error) {
 	user := ctx.Value("user").(string)
 	// 1.查询规则值配置
-	strategy, err := svc.StrategyRuleModel.QueryStrategyRule(ctx, strategyId, RULE_BLACKLIST.Code())
+	strategy, err := svcCtx.StrategyRuleModel.QueryStrategyRule(ctx, strategyId, RULE_BLACKLIST.Code())
 	if err != nil {
 		return StrategyAwardVO{}, err
 	}
