@@ -24,21 +24,9 @@ cd app/strategy/raffle/api
 go run strategy.go
 ```
 ## apis
-## POST random raffle
+### POST random raffle
 
-POST /api/v1/raffle/random_raffle
-
-> Body request
-
-```json
-{
-  "strategy_id": 100001
-}
-```
-
-## GET strategy armory
-
-GET /api/v1/raffle/strategy_armory
+#### POST /api/v1/raffle/random_raffle
 
 > Body request
 
@@ -47,9 +35,21 @@ GET /api/v1/raffle/strategy_armory
   "strategy_id": 100001
 }
 ```
-## POST query raffle award list
 
-POST /api/v1/raffle/query_raffle_award_list
+### GET strategy armory
+
+#### GET /api/v1/raffle/strategy_armory
+
+> Body request
+
+```json
+{
+  "strategy_id": 100001
+}
+```
+### POST query raffle award list
+
+#### POST /api/v1/raffle/query_raffle_award_list
 
 > Body request
 
