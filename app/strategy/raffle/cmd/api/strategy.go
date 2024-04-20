@@ -5,11 +5,11 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/logic"
-	"github.com/robfig/cron/v3"
-
 	"github.com/hsn0918/BigMarket/pkg/xcode"
 	"github.com/zeromicro/go-zero/rest/httpx"
+
+	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/logic"
+	"github.com/robfig/cron/v3"
 
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/config"
 	"github.com/hsn0918/BigMarket/app/strategy/raffle/cmd/api/internal/handler"
@@ -30,8 +30,9 @@ func main() {
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()
 	ctx := svc.NewServiceContext(c)
-	handler.RegisterHandlers(server, ctx)
 	httpx.SetErrorHandler(xcode.ErrHandler)
+	httpx.SetOkHandler(xcode.OkHandler)
+	handler.RegisterHandlers(server, ctx)
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
 	// 定时任务
 	cronJob := logic.NewCronJob(context.Background(), ctx, cron.New(cron.WithSeconds()))

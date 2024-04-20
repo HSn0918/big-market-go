@@ -16,7 +16,6 @@ func RaffleAwardListHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
-
 		l := logic.NewRaffleAwardListLogic(r.Context(), svcCtx)
 		resp, err := l.RaffleAwardList(&req)
 		if err != nil {

@@ -29,11 +29,14 @@ type (
 		IsSuccess bool `json:"is_success"` // 表明请求是否成功
 	}
 	// RaffleAwardListResponse定义了抽奖奖品列表的响应格式
-	RaffleAwardListResponse {
+	RaffleAward {
 		AwardId       int    `json:"award_id"` // 奖品ID
 		AwardTitle    string `json:"award_title"` // 奖品标题
-		AwardSubtitle int    `json:"award_subtitle"` // 奖品副标题
+		AwardSubtitle string `json:"award_subtitle"` // 奖品副标题
 		Sort          int    `json:"sort"` // 奖品排序索引
+	}
+	RaffleAwardListResponse {
+		RaffleAwardList []*RaffleAward `json:"raffle_award_list"` // 抽奖奖品列表
 	}
 	// RaffleResponse定义了抽奖操作的响应格式
 	RaffleResponse {
