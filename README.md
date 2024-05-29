@@ -59,4 +59,10 @@ go run strategy.go
 }
 ```
 
+## Flow chart
 
+![抽奖系统时序图](dist/Generalprocess.png)
+
+![装载](dist/strategyArmoryLogic.png)
+
+![抽奖](dist/raffleLogic.png)
